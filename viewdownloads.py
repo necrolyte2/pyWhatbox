@@ -6,9 +6,9 @@ def main():
     args = parse_args()
     w = WhatboxXMLRPC(
             args.host,
-            args.path,
             args.username,
-            args.password
+            args.password,
+            args.path
     )
     print w.get_all_files()
 
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
 	'-p',
         dest='path',
-        default='/webui'
+        default='/xmlrpc'
     )
 
     return parser.parse_args()

@@ -10,7 +10,7 @@ except ImportError:
     sys.exit( 1 )
 
 class WhatboxXMLRPC( object ):
-    def __init__( self, host, path, username, password ):
+    def __init__( self, host, username, password, path='/xmlrpc' ):
         self.host = host
         self.path = path
         self.username = username
@@ -22,11 +22,11 @@ class WhatboxXMLRPC( object ):
         self._setup_conn()
 
     def _setup_conn( self, **kwargs ):
-        self.conn = xmlrpclib.ServerProxy(
-            'https://{username}:{password}@{host}{path}'.format(
+	url = 'https://{username}:{password}@{host}{path}'.format(
                 **self.__dict__
-            )
         )
+        print url
+        self.conn = xmlrpclib.ServerProxy( url )
 
     def get_hashs( self ):
         return self.conn.download_list()
@@ -54,6 +54,6 @@ class WhatboxXMLRPC( object ):
                 torrents[dhash] = {}
             torrents[dhash]['name'] = self.get_download_name(dhash)
             torrents[dhash]['files'] = self.get_download_files(dhash)
-            torrents[dhash]['active'] = self.d.is_active(dhash)
-            torrents[dhash]['complete'] = self.d.get_complete(dhash)
+            torrents[dhash]['active'] = self.conn.d.is_active(dhash)
+            torrents[dhash]['complete'] = self.conn.d.get_complete(dhash)
         return torrents
