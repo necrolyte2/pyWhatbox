@@ -7,31 +7,8 @@ import subprocess
 import shlex
 
 # Default url path to finished downloads
+# on the host
 PRIVATEFINISHED='/private/finished'
-'''
-{
-    'A43732D2405CABECC09D0D8B653044F3D5E9D3A7': {
-        'files': [
-            '/home/necrolyte2/finished/Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE/Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE.avi',
-            '/home/necrolyte2/finished/Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE/Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE.nfo',
-            '/home/necrolyte2/finished/Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE/Torrent Downloaded From ExtraTorrent.com.txt'
-        ],
-        'active': 1,
-        'name': 'Despicable.Me.2.2013.DVDRip.XviD-iNViNCiBLE',
-        'complete': 1
-    }, 
-    '3B7C54C333FEE187CF581E7A74436C97EE012CBC': {
-        'files': [
-            '/home/necrolyte2/files/Cliffhanger (1993)/Cliffhanger.1993.720p.Bluray.x264.YIFY.mp4',
-            '/home/necrolyte2/files/Cliffhanger (1993)/WWW.YIFY-TORRENTS.COM.jpg',
-            '/home/necrolyte2/files/Cliffhanger (1993)/Cliffhanger.1993.720p.Bluray.x264.YIFY.srt'
-        ],
-        'active': 1,
-        'name': 'Cliffhanger (1993)',
-        'complete': 0
-    }
-}
-'''
 
 def main():
     args = parse_args()
@@ -51,8 +28,19 @@ def sync_completed( username, password, host, xmlpath, syncdir, finishedpath ):
 
     torrents = w.get_all_files()
     for hash, info in torrents.items():
-        if info['completed'] == 1:
+        if info['complete'] == 1:
             sync_torrent( info, basesyncurl, syncdir, username, password )
+
+def should_download( download_path ):
+    ''' Filter downloads and check for their existence '''
+    exclude_filter = ('.torrent','.txt','.jpg','.nfo','.meta')
+    if os.path.exists( download_path ):
+        return False
+    p,e = os.path.splitext( download_path )
+    if e in exclude_filter:
+        return False
+
+    return True
 
 def sync_torrent( torrent_info, baseurl, syncdir, username, password, conns=16 ):
     if baseurl[-1] != '/':
@@ -68,19 +56,25 @@ def sync_torrent( torrent_info, baseurl, syncdir, username, password, conns=16 )
             raise e
 
     downloads = []
+    # Loop through all files in the torrent
     for f in torrent_info['files']:
+        # Split the file name up by each /
         p = f.split('/')
+        # We only want the portion of the filename that comes after the name of the torrent
         r = "/".join( p[p.index( torrent_info['name'] ):] )
-        url = baseurl + r
-        # Would probably be best to just urllib to download the chunks for a more full python solution
-        cmd = 'aria2c --file-allocation=none -k 10M -s {conns} -j {conns} -x {conns} '\
-            '--http-user {username} --http-pass {password} --check-certificate=false "{url}"'.format(
-                conns=conns, username=username, password=password, url=url
-        )
-        print cmd
-        p = subprocess.Popen( shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=dstdir )
-        for line in iter(p.stdout.readline, b''):
-            print line.rstrip()
+        path, filename = os.path.split( r )
+        if should_download( os.path.join( dstdir, filename ) ):
+            url = baseurl + r
+            # Would probably be best to just urllib to download the chunks for a more full python solution
+            cmd = 'aria2c --file-allocation=none -k 10M -s {conns} -j {conns} -x {conns} '\
+                '--http-user {username} --http-pass {password} --check-certificate=false "{url}"'.format(
+                    conns=conns, username=username, password=password, url=url
+            )
+            p = subprocess.Popen( shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=dstdir )
+            for line in iter(p.stdout.readline, b''):
+                print line.rstrip()
+            if p.returncode != 0:
+                print "{} failed".format(cmd)
     # Should like check to make sure it is actually downloaded now
     # Then delete the source torrent and files
 

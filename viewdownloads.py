@@ -1,6 +1,9 @@
+#!/usr/bin/env python2
+
 from whatbox import WhatboxXMLRPC
 
 import argparse
+import pprint
 
 def main():
     args = parse_args()
@@ -10,7 +13,7 @@ def main():
             args.password,
             args.path
     )
-    print w.get_all_files()
+    pprint.pprint( w.get_all_files(), indent=4 )
 
 def parse_args():
     parser = argparse.ArgumentParser()
