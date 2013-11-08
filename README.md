@@ -21,8 +21,8 @@ print w.get_all_files()
 Misc Goodies
 ============
 
-viewdownloads.py is a script to easily just list all your downloads
-wb_sync_completed.py is a script to sync all completed downloads to a folder on your computer
+* viewdownloads.py is a script to easily just list all your downloads
+* wb_sync_completed.py is a script to sync all completed downloads to a folder on your computer
 
 
 TODO
