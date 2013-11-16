@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 from whatbox import WhatboxXMLRPC
 import argparse
 import os.path
