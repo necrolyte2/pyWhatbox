@@ -22,23 +22,43 @@ class WhatboxXMLRPC( object ):
         self._setup_conn()
 
     def _setup_conn( self, **kwargs ):
-	url = 'https://{username}:{password}@{host}{path}'.format(
+        url = 'https://{username}:{password}@{host}{path}'.format(
                 **self.__dict__
         )
-        print url
         self.conn = xmlrpclib.ServerProxy( url )
 
     def get_hashs( self ):
+        '''
+            Returns a list of all torrent hashes
+        '''
         return self.conn.download_list()
 
     def get_download_name( self, dlhash ):
+        '''
+            Returns the name of a given torrent hash
+
+            @param dlhash - The hash to fetch the name for
+            @returns the name of the torrent
+        '''
         return self.conn.d.get_name( dlhash )
 
     def get_download_path( self, dlhash ):
+        '''
+            Gets the path of the given torrent hash
+
+            @param dlhash - The hash to fetch the path for
+            @returns the path on the server the download is going to
+        '''
         return self.conn.d.get_directory( dlhash )
 
     def get_download_files( self, dlhash ):
+        '''
+            Gets a list of all the files for a given torrent hash
+            @param dlhash - The torrent hash to get the filenames for
+            @returns a list of all the paths to the files for the torrent
+        '''
         mc = xmlrpclib.MultiCall(self.conn)
+        print mc
         filenames = []
         dlpath = self.get_download_path( dlhash )
         for index in range(self.conn.d.size_files( dlhash )):
@@ -47,6 +67,11 @@ class WhatboxXMLRPC( object ):
         return [os.path.join(dlpath,fn) for fn in mc()]
 
     def get_all_files( self ):
+        '''
+            Returns a dictionary of information about all torrents on the server
+            @returns a dictionary keyed by each torrent hash with information about
+                each of the torrents
+        '''
         hashs = self.get_hashs()
         torrents = {}
         for dhash in hashs:
