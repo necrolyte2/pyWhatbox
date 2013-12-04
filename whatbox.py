@@ -58,7 +58,6 @@ class WhatboxXMLRPC( object ):
             @returns a list of all the paths to the files for the torrent
         '''
         mc = xmlrpclib.MultiCall(self.conn)
-        print mc
         filenames = []
         dlpath = self.get_download_path( dlhash )
         for index in range(self.conn.d.size_files( dlhash )):
@@ -82,3 +81,22 @@ class WhatboxXMLRPC( object ):
             torrents[dhash]['active'] = self.conn.d.is_active(dhash)
             torrents[dhash]['complete'] = self.conn.d.get_complete(dhash)
         return torrents
+
+    def delete_download( self, dlhash ):
+        '''
+            Sets the event to delete the download when the torrent is erased
+            The documentation is not exactly the most straight forward so I can
+            only hope this is the easiest/best way to do it.
+
+            @param dlhash
+
+            @returns the return code from running the commands
+        '''
+        ret = self.conn.system.method.set_key( 
+                'event.download.erased',
+                'removefile',
+                'execute={rm,-rf,$d.get_base_path=}'
+        )
+        if ret == 0:
+            ret = self.conn.d.erase( dlhash )
+        return ret

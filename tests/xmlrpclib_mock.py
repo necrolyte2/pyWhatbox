@@ -4,47 +4,66 @@ import os
 
 from downloads import downloads
 
-def getorraise( dlhash, key ):
-    try:
-        d = downloads[dlhash]
-        return d[key]
-    except KeyError as e:
-        raise xmlrpclib.Fault(-501, '')
+class MockServerProxy( Mock ):
+    def __init__( self, *args, **kwargs ):
+        super(MockServerProxy,self).__init__( *args, **kwargs )
+        self.downloads = None
 
-def getname( dlhash ):
-    return getorraise( dlhash, 'name' )
+    @property
+    def d( self ):
+        return self
 
-def getactive( dlhash ):
-    return getorraise( dlhash, 'active' )
+    def download_list( self ):
+        return self.downloads.keys()
 
-def getcomplete( dlhash ):
-    return getorraise( dlhash, 'complete' )
+    def getorraise( self, dlhash, key ):
+        try:
+            d = self.downloads[dlhash]
+            return d[key]
+        except KeyError as e:
+            raise xmlrpclib.Fault(-501, '')
 
-def getpath( dlhash ):
-    return getorraise( dlhash, 'path' )
+    def get_name( self, dlhash ):
+        return self.getorraise( dlhash, 'name' )
 
-def sizefiles( dlhash ):
-    f = getorraise( dlhash, 'files' )
-    return len( f )
+    def is_active( self, dlhash ):
+        return self.getorraise( dlhash, 'active' )
 
-def getfile( dlhash, index ):
-    return getorraise( dlhash, 'files' )[index]
+    def get_complete( self, dlhash ):
+        return self.getorraise( dlhash, 'complete' )
 
-def getfiles( dlhash ):
-    files = getorraise( dlhash, 'files' )
-    return [os.path.join(getpath(dlhash),f) for f in files]
+    def get_directory( self, dlhash ):
+        return self.getorraise( dlhash, 'path' )
+
+    def size_files( self, dlhash ):
+        f = self.getorraise( dlhash, 'files' )
+        return len( f )
+
+    def get_file( self, dlhash, index ):
+        return self.getorraise( dlhash, 'files' )[index]
+
+    def get_files( self, dlhash ):
+        files = self.getorraise( dlhash, 'files' )
+        return [os.path.join(self.get_directory(dlhash),f) for f in files]
+
+    def erase( self, dlhash ):
+        print "Removing {}".format(dlhash)
+        if dlhash in self.downloads:
+            del self.downloads[dlhash]
+            return 0
+        return 1
+
+    @property
+    def system( self ):
+        return self
+    @property
+    def method( self ):
+        return self
+    def set_key( self, *args ):
+        return 0
 
 # Mock up the ServerProxy
-conn = Mock( xmlrpclib.ServerProxy )
-conn.return_value.download_list.return_value = downloads.keys()
-conn.return_value.d.get_name = Mock( side_effect=getname )
-conn.return_value.d.get_directory = Mock( side_effect=getpath )
-conn.return_value.d.is_active = Mock( side_effect=getactive )
-conn.return_value.d.get_complete = Mock( side_effect=getcomplete )
-conn.return_value.d.size_files = Mock( side_effect=sizefiles )
-
-# Alias for importing
-ServerProxy = conn
+ServerProxy = MockServerProxy( xmlrpclib.ServerProxy )
 
 
 # Multicall Mock
@@ -52,12 +71,13 @@ class MultiCall( object ):
     def __init__( self, conn ):
         self.files = []
         self.f = self
+        self.conn = conn
 
     def __getitem__( self, index ):
         return self.files[index]
 
     def get_path( self, dlhash, index ):
-        self.files.append( getfile( dlhash, index ) )
+        self.files.append( self.conn.get_file( dlhash, index ) )
 
     def __call__( self ):
         return self.files
