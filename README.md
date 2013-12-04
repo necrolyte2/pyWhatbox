@@ -29,6 +29,5 @@ TODO
 ====
 
 * Change project so it is an actualy Python package
-* Add remove/delete torrent methods to WhatboxXMLRPC class
 * Modify wb_sync_completed.py so it uses urllib functionality or something similar so
   it is 100% python and doesn't rely on using aria2c
