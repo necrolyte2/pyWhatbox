@@ -92,7 +92,7 @@ def sync_torrent( torrent, baseurl, syncdir, username, password, conns=16 ):
                 print "{} failed".format(cmd)
                 print "return code was {}".format(p.returncode)
                 failed = True
-    # Should like check to make sure it is actually downloaded now
+    # Should check to make sure it is actually downloaded now
     if not failed:
         what.delete_download( dlhash )
 
